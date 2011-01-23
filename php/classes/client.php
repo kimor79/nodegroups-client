@@ -39,8 +39,10 @@ class NodegroupsClient {
 	);
 
 	protected $curl_opts = array();
-
 	protected $error = '';
+	protected $headers = array();
+	protected $iheaders = array();
+	protected $raw_headers = array();
 
 	public function __construct($options = array()) {
 		if(array_key_exists('config_file', $options)) {
@@ -100,6 +102,28 @@ class NodegroupsClient {
 	}
 
 	/**
+	 * Get response header(s) from the most recent call
+	 * @param string header (optional)
+	 * @return mixed
+	 */
+	public function getHeader($header = '') {
+		if(empty($header)) {
+			return $this->headers();
+		}
+
+		if(array_key_exists($header, $this->headers)) {
+			return $this->headers[$header];
+		}
+
+		$iheader = strtolower($header);
+		if(array_key_exists($iheader, $this->iheaders)) {
+			return $this->iheaders[$iheader];
+		}
+
+		return NULL;
+	}
+
+	/**
 	 * Get nodes from an expression
 	 * @param string $expression
 	 * @return array
@@ -148,6 +172,14 @@ class NodegroupsClient {
 	}
 
 	/**
+	 * Get the raw headers from the most recent call
+	 * @return array
+	 */
+	public function getRawHeaders() {
+		return $this->raw_headers;
+	}
+
+	/**
 	 * Parse a config file
 	 * @param string $file
 	 */
@@ -188,9 +220,14 @@ class NodegroupsClient {
 		}
 
 		$curlopts = array(
+			CURLOPT_HEADERFUNCTION => array(&$this, 'readHeader'),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_URL => $url
 		);
+
+		$this->headers = array();
+		$this->iheaders = array();
+		$this->raw_headers = array();
 
 		$ch = curl_init();
 		curl_setopt_array($ch, $curlopts);
@@ -242,6 +279,10 @@ class NodegroupsClient {
 			CURLOPT_URL => $url,
 		);
 
+		$this->headers = array();
+		$this->iheaders = array();
+		$this->raw_headers = array();
+
 		$ch = curl_init();
 		curl_setopt_array($ch, $curlopts);
 
@@ -272,6 +313,29 @@ class NodegroupsClient {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Callback for curl's HEADERFUNCTION
+	 * @param object $ch
+	 * @param string $header
+	 * @return int
+	 */
+	protected function readHeader($ch, $header) {
+		$this->raw_headers[] = $header;
+
+		if(strpos($header, ': ') != 0) {
+			list($key, $value) = explode(': ', $header, 2);
+			$ikey = strtolower($key);
+
+			$value = trim($value);
+			if($value !== '') {
+				$this->headers[$key] = $value;
+				$this->iheaders[$ikey] = $value;
+			}
+		}
+
+		return strlen($header);
 	}
 
 	/**
