@@ -31,69 +31,72 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class NodegroupsClient {
 
-	private $config = array();
-
-	private $config_defaults = array(
-		'host' => 'localhost',
-		'ssl' => array(
-			'cainfo' => '/etc/ssl/cacert.pem',
-			'verifypeer' => '1',
+	protected $config = array(
+		'uri' => array(
+			'ro' => 'http://localhost/api/v1',
+			'rw' => 'http://localhost/api/v1',
 		),
-		'uri_prefix' => '/api',
-		'use_ssl' => '',
-		'useragent' => 'NodegroupsClient/INSERT_VERSION_HERE',
 	);
 
-	private $config_file = '/usr/local/etc/nodegroups_client.ini';
+	protected $curl_opts = array();
 
 	protected $error = '';
 
-	public function __construct() {
-		if(is_file($this->config_file)) {
-			$config_parsed = @parse_ini_file($this->config_file, true);
+	public function __construct($options = array()) {
+		if(array_key_exists('config_file', $options)) {
+			$file = $options['config_file'];
 
-			if($config_parsed === false) {
-				throw new Exception('Error parsing configuration file');
+			if(!is_null($file)) {
+				$this->parseConfigFile($file);
+			}
+
+			unset($options['config_file']);
+		} else {
+			$file = '/usr/local/etc/nodegroups_client/config.ini';
+			if(is_file($file)) {
+				$this->parseConfigFile($file);
 			}
 		}
 
-		foreach($this->config_defaults as $key => $value) {
-			if(array_key_exists($key, $config_parsed)) {
-				$this->config[$key] = $config_parsed[$key];
-			} else {
-				$this->config[$key] = $value;
-			}
-		}
-	}
+		$this->config = $this->setDetails($this->config, $options);
 
-	/**
-	 * Get a configuration value
-	 * @param string $key
-	 * @param string $sub
-	 * @return mixed
-	 */
-	public function getConfig($key = '', $sub = '') {
-		if(array_key_exists($key, $this->config)) {
-			if(!empty($sub)) {
-				if(is_array($this->config[$key])) {
-					if(array_key_exists($sub, $this->config[$key])) {
-						return $this->config[$key][$sub];
-					}
+		$confopts = $this->getConfig('php');
+		if(is_array($confopts)) {
+			foreach($confopts as $opt => $value) {
+				if(substr($opt, 0, 8) == 'CURLOPT_') {
+					$this->curlopts[$opt] = $value;
 				}
 			}
-
-			return $this->config[$key];
 		}
-
-		return '';
 	}
 
 	/**
 	 * Get the most recent error
 	 * @return string
 	 */
-	public function getError() {
+	public function error() {
 		return $this->error;
+	}
+
+	/**
+	 * Get a config param
+	 * @param string $param
+	 * @param string $sub
+	 * @return mixed
+	 */
+	public function getConfig($param = '', $sub = '') {
+		if(array_key_exists($param, $this->config)) {
+			if(empty($sub)) {
+				return $this->config[$param];
+			} else {
+				if(array_key_exists($sub,
+						$this->config[$param])) {
+					return $this->config[$param][$sub];
+				}
+			}
+		}
+
+		return NULL;
 	}
 
 	/**
@@ -104,7 +107,7 @@ class NodegroupsClient {
 	public function getNodesFromExpression($expression) {
 		// Add a space so as not to trigger the file upload
 		// when expression begins with '@'
-		$data = $this->queryPost('r/get_nodes_from_expression.php', array(
+		$data = $this->queryPost('ro', 'r/get_nodes.php', array(
 			'expression' => ' ' . $expression,
 		));
 
@@ -112,7 +115,8 @@ class NodegroupsClient {
 			if(array_key_exists('records', $data)) {
 				return $data['records'];
 			} else {
-				$this->error = 'Records field not in API output';
+				$this->error =
+					'Records field not in API output';
 				return false;
 			}
 		}
@@ -126,7 +130,7 @@ class NodegroupsClient {
 	 * @return array
 	 */
 	public function getNodesFromNodegroup($nodegroup) {
-		$data = $this->queryGet('r/get_nodes_from_nodegroup.php', array(
+		$data = $this->queryGet('ro', 'r/get_nodes.php', array(
 			'nodegroup' => $nodegroup,
 		));
 
@@ -134,7 +138,8 @@ class NodegroupsClient {
 			if(array_key_exists('records', $data)) {
 				return $data['records'];
 			} else {
-				$this->error = 'Records field not in API output';
+				$this->error =
+					'Records field not in API output';
 				return false;
 			}
 		}
@@ -143,20 +148,34 @@ class NodegroupsClient {
 	}
 
 	/**
-	 * Make a GET query
-	 * @param string uri
-	 * @param array uri parameters
-	 * @return mixed
+	 * Parse a config file
+	 * @param string $file
 	 */
-	public function queryGet($uri = '', $params = array()) {
-		$url = 'http';
-
-		if($this->getConfig('use_ssl')) {
-			$url .= 's';
+	protected function parseConfigFile($file) {
+		if(!is_file($file)) {
+			throw new Exception('No such file: ' . $file);
 		}
 
-		$url .= '://' . $this->getConfig('host') . '/' . $this->getConfig('uri_prefix');
-		$url .= '/v1/' . $uri . '?outputFormat=json';
+		$data = @parse_ini_file($file, true);
+
+		if(empty($data)) {
+			throw new Exception('Unable to parse config file');
+		}
+
+		$this->config = $this->setDetails($this->config, $data);
+	}
+
+	/**
+	 * Make a GET query
+	 * @param string $type ro/rw
+	 * @param string $path
+	 * @param array $params uri parameters
+	 * @return mixed
+	 */
+	public function queryGet($type = 'ro', $path = '', $params = array()) {
+		$url = sprintf("%s/%s?outputFormat=json",
+			rtrim($this->getConfig('uri', $type)),
+			ltrim($path, '/'));
 
 		if(!empty($params)) {
 			$t_params = array();
@@ -169,15 +188,16 @@ class NodegroupsClient {
 		}
 
 		$curlopts = array(
-			CURLOPT_CAINFO => $this->getConfig('ssl', 'cainfo'),
 			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_SSL_VERIFYPEER => $this->getConfig('ssl', 'verifypeer'),
-			CURLOPT_USERAGENT => $this->getConfig('useragent'),
-			CURLOPT_URL => $url,
+			CURLOPT_URL => $url
 		);
 
 		$ch = curl_init();
 		curl_setopt_array($ch, $curlopts);
+
+		foreach($this->curl_opts as $opt => $value) {
+			curl_setopt($ch, constant($opt), $value);
+		}
 
 		$j_data = curl_exec($ch);
 
@@ -206,31 +226,28 @@ class NodegroupsClient {
 
 	/**
 	 * Make a POST query
-	 * @param string uri
-	 * @param array uri parameters
+	 * @param string $type ro/rw
+	 * @param string $path
+	 * @param array $params uri parameters
 	 * @return mixed
 	 */
-	public function queryPost($uri = '', $params = array()) {
-		$url = 'http';
-
-		if($this->getConfig('use_ssl')) {
-			$url .= 's';
-		}
-
-		$url .= '://' . $this->getConfig('host') . '/' . $this->getConfig('uri_prefix');
-		$url .= '/v1/' . $uri . '?outputFormat=json';
+	public function queryPost($type = 'ro', $path = '', $params = array()) {
+		$url = sprintf("%s/%s?outputFormat=json",
+			rtrim($this->getConfig('uri', $type)),
+			ltrim($path, '/'));
 
 		$curlopts = array(
-			CURLOPT_CAINFO => $this->getConfig('ssl', 'cainfo'),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_POSTFIELDS => $params,
-			CURLOPT_SSL_VERIFYPEER => $this->getConfig('ssl', 'verifypeer'),
-			CURLOPT_USERAGENT => $this->getConfig('useragent'),
 			CURLOPT_URL => $url,
 		);
 
 		$ch = curl_init();
 		curl_setopt_array($ch, $curlopts);
+
+		foreach($this->curl_opts as $opt => $value) {
+			curl_setopt($ch, constant($opt), $value);
+		}
 
 		$j_data = curl_exec($ch);
 
@@ -258,24 +275,38 @@ class NodegroupsClient {
 	}
 
 	/**
-	 * Set a configuration value
-	 * @param string $key
-	 * @param mixed $value
-	 * @return bool
+	 * set $details with overrides
+	 * @param array $defaults
+	 * @param array $overrides
+	 * @return array
 	 */
-	public function setConfig($key, $value) {
-		if(array_key_exists($key, $this->config_defaults)) {
-			if(is_array($value)) {
-				if(!is_array($this->config_defaults[$key])) {
-					return false;
-				}
+	public function setDetails($defaults = array(), $overrides = array()) {
+		$details = $defaults;
+
+		foreach(array_merge($overrides, $defaults) as $key => $junk) {
+			if(!array_key_exists($key, $overrides)) {
+				continue;
 			}
 
-			$this->config[$key] = $value;
-			return true;
+			if(!array_key_exists($key, $defaults)) {
+				$details[$key] = $overrides[$key];
+				continue;
+			}
+
+			if(is_array($defaults[$key])) {
+				if(!is_array($overrides[$key])) {
+					unset($details[$key]);
+					continue;
+				}
+
+				$details[$key] = $this->setDetails(
+					$details[$key], $overrides[$key]);
+			} else {
+				$details[$key] = $overrides[$key];
+			}
 		}
 
-		return false;
+		return $details;
 	}
 }
 
