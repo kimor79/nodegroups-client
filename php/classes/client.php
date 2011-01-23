@@ -66,7 +66,8 @@ class NodegroupsClient {
 		if(is_array($confopts)) {
 			foreach($confopts as $opt => $value) {
 				if(substr($opt, 0, 8) == 'CURLOPT_') {
-					$this->curlopts[$opt] = $value;
+					$c_opt = constant($opt);
+					$this->curl_opts[$c_opt] = $value;
 				}
 			}
 		}
@@ -108,7 +109,7 @@ class NodegroupsClient {
 	 */
 	public function getHeader($header = '') {
 		if(empty($header)) {
-			return $this->headers();
+			return $this->headers;
 		}
 
 		if(array_key_exists($header, $this->headers)) {
@@ -216,10 +217,10 @@ class NodegroupsClient {
 				$t_params[] = $key . '=' . rawurlencode($value);
 			}
 
-			$url .= implode('&', $t_params);
+			$url .= '&' . implode('&', $t_params);
 		}
 
-		$curlopts = array(
+		$opts = array(
 			CURLOPT_HEADERFUNCTION => array(&$this, 'readHeader'),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_URL => $url
@@ -230,11 +231,8 @@ class NodegroupsClient {
 		$this->raw_headers = array();
 
 		$ch = curl_init();
-		curl_setopt_array($ch, $curlopts);
-
-		foreach($this->curl_opts as $opt => $value) {
-			curl_setopt($ch, constant($opt), $value);
-		}
+		curl_setopt_array($ch, $this->curl_opts);
+		curl_setopt_array($ch, $opts);
 
 		$j_data = curl_exec($ch);
 
@@ -255,9 +253,11 @@ class NodegroupsClient {
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
+			curl_close($ch);
 			return false;
 		}
 
+		curl_close($ch);
 		return $data;
 	}
 
@@ -273,7 +273,7 @@ class NodegroupsClient {
 			rtrim($this->getConfig('uri', $type)),
 			ltrim($path, '/'));
 
-		$curlopts = array(
+		$opts = array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_POSTFIELDS => $params,
 			CURLOPT_URL => $url,
@@ -284,11 +284,8 @@ class NodegroupsClient {
 		$this->raw_headers = array();
 
 		$ch = curl_init();
-		curl_setopt_array($ch, $curlopts);
-
-		foreach($this->curl_opts as $opt => $value) {
-			curl_setopt($ch, constant($opt), $value);
-		}
+		curl_setopt_array($ch, $this->curl_opts);
+		curl_setopt_array($ch, $opts);
 
 		$j_data = curl_exec($ch);
 
@@ -309,9 +306,11 @@ class NodegroupsClient {
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
+			curl_close($ch);
 			return false;
 		}
 
+		curl_close($ch);
 		return $data;
 	}
 
