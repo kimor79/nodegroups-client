@@ -1,1 +1,11 @@
 A client for the nodegroups API
+
+$ngclient = new NodegroupsClient();
+$nodes = $ngclient->getNodesFromNodegroup('@foobar');
+if(!is_array($nodes)) {
+	echo $ngclient->error();
+}
+if($debug) {
+	echo $ngclient->getHeader('X-Served-By');
+}
+print_r($nodes);
