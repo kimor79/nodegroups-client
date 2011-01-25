@@ -125,6 +125,29 @@ class NodegroupsClient {
 	}
 
 	/**
+	 * Get nodegroups from node
+	 * @param string $node
+	 * @return array
+	 */
+	public function getNodegroupsFromNode($node) {
+		$data = $this->queryGet('ro', 'r/list_nodegroups.php', array(
+			'node' => $node,
+		));
+
+		if(is_array($data)) {
+			if(array_key_exists('records', $data)) {
+				return $data['records'];
+			} else {
+				$this->error =
+					'Records field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get nodes from an expression
 	 * @param string $expression
 	 * @return array
@@ -214,7 +237,13 @@ class NodegroupsClient {
 			$t_params = array();
 
 			foreach($params as $key => $value) {
-				$t_params[] = $key . '=' . rawurlencode($value);
+				if(is_array($value)) {
+					foreach($value as $t_value) {
+						$t_params[] = $key . '[]=' . rawurlencode($t_value);
+					}
+				} else {
+					$t_params[] = $key . '=' . rawurlencode($value);
+				}
 			}
 
 			$url .= '&' . implode('&', $t_params);
