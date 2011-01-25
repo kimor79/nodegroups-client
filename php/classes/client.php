@@ -325,11 +325,12 @@ class NodegroupsClient {
 
 		if(strpos($header, ': ') != 0) {
 			list($key, $value) = explode(': ', $header, 2);
-			$ikey = strtolower($key);
 
 			$value = trim($value);
 			if($value !== '') {
 				$this->headers[$key] = $value;
+
+				$ikey = strtolower($key);
 				$this->iheaders[$ikey] = $value;
 			}
 		}
