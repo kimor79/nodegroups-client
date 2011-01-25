@@ -132,7 +132,7 @@ class NodegroupsClient {
 	public function getNodesFromExpression($expression) {
 		// Add a space so as not to trigger the file upload
 		// when expression begins with '@'
-		$data = $this->queryPost('ro', 'r/get_nodes.php', array(
+		$data = $this->queryPost('ro', 'r/list_nodes.php', array(
 			'expression' => ' ' . $expression,
 		));
 
@@ -155,7 +155,7 @@ class NodegroupsClient {
 	 * @return array
 	 */
 	public function getNodesFromNodegroup($nodegroup) {
-		$data = $this->queryGet('ro', 'r/get_nodes.php', array(
+		$data = $this->queryGet('ro', 'r/list_nodes.php', array(
 			'nodegroup' => $nodegroup,
 		));
 
