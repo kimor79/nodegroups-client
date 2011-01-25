@@ -274,6 +274,7 @@ class NodegroupsClient {
 			ltrim($path, '/'));
 
 		$opts = array(
+			CURLOPT_HEADERFUNCTION => array(&$this, 'readHeader'),
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_POSTFIELDS => $params,
 			CURLOPT_URL => $url,
