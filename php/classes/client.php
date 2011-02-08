@@ -161,7 +161,13 @@ class NodegroupsClient {
 
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
-				return $data['records'];
+				$nodes = array();
+				while(list($junk, $node) =
+						each($data['records'])) {
+					$nodes[] = $node['node'];
+				}
+
+				return $nodes;
 			} else {
 				$this->error =
 					'Records field not in API output';
@@ -184,7 +190,13 @@ class NodegroupsClient {
 
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
-				return $data['records'];
+				$nodes = array();
+				while(list($junk, $node) =
+						each($data['records'])) {
+					$nodes[] = $node['node'];
+				}
+
+				return $nodes;
 			} else {
 				$this->error =
 					'Records field not in API output';
