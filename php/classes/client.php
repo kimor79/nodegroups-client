@@ -127,16 +127,30 @@ class NodegroupsClient {
 	/**
 	 * Get nodegroups from node
 	 * @param string $node
+	 * @param string $app
 	 * @return array
 	 */
-	public function getNodegroupsFromNode($node) {
-		$data = $this->queryGet('ro', 'r/list_nodegroups.php', array(
+	public function getNodegroupsFromNode($node, $app = '') {
+		$opts = array(
 			'node' => $node,
-		));
+		);
 
+		if($app) {
+			$opts['app'] = $app;
+			$opts['sortDir'] = 'asc';
+			$opts['sortField'] = 'order';
+		}
+
+		$data = $this->queryGet('ro', 'r/list_nodegroups.php', $opts);
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
-				return $data['records'];
+				$nodegroups = array();
+				while(list($junk, $nodegroup) =
+						each($data['records'])) {
+					$nodegroups[] = $nodegroup['nodegroup'];
+				}
+
+				return $nodegroups;
 			} else {
 				$this->error =
 					'Records field not in API output';
