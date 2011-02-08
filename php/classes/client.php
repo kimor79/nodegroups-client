@@ -245,20 +245,23 @@ class NodegroupsClient {
 			rtrim($this->getConfig('uri', $type)),
 			ltrim($path, '/'));
 
-		if(!empty($params)) {
-			$t_params = array();
+		$url_params = array();
 
-			foreach($params as $key => $value) {
-				if(is_array($value)) {
-					foreach($value as $t_value) {
-						$t_params[] = $key . '[]=' . rawurlencode($t_value);
+		foreach($params as $key => $value) {
+			if(is_array($value)) {
+				foreach($value as $t_value) {
+					$url_params[] = sprintf("%s[]=%s",
+						$key,
+						rawurlencode($t_value));
 					}
-				} else {
-					$t_params[] = $key . '=' . rawurlencode($value);
-				}
+			} else {
+				$url_params[] = sprintf("%s=%s", $key,
+					rawurlencode($value));
 			}
+		}
 
-			$url .= '&' . implode('&', $t_params);
+		if(!empty($url_params)) {
+			$url .= '&' . implode('&', $url_params);
 		}
 
 		$opts = array(
