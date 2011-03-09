@@ -323,18 +323,39 @@ class NodegroupsClient {
 	 * Make a POST query
 	 * @param string $type ro/rw
 	 * @param string $path
-	 * @param array $params uri parameters
+	 * @param array $post POST parameters
+	 * @param array $get GET parameters
 	 * @return mixed
 	 */
-	public function queryPost($type = 'ro', $path = '', $params = array()) {
+	public function queryPost($type = 'ro', $path = '',
+			$post = array(), $get = array()) {
 		$url = sprintf("%s/%s?outputFormat=json",
 			rtrim($this->getConfig('uri', $type)),
 			ltrim($path, '/'));
 
+		$url_params = array();
+
+		foreach($get as $key => $value) {
+			if(is_array($value)) {
+				foreach($value as $t_value) {
+					$url_params[] = sprintf("%s[]=%s",
+						$key,
+						rawurlencode($t_value));
+					}
+			} else {
+				$url_params[] = sprintf("%s=%s", $key,
+					rawurlencode($value));
+			}
+		}
+
+		if(!empty($url_params)) {
+			$url .= '&' . implode('&', $url_params);
+		}
+
 		$opts = array(
 			CURLOPT_HEADERFUNCTION => array(&$this, 'readHeader'),
 			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_POSTFIELDS => $params,
+			CURLOPT_POSTFIELDS => $post,
 			CURLOPT_URL => $url,
 		);
 
