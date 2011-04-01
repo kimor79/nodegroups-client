@@ -141,7 +141,8 @@ class NodegroupsClient {
 			$opts['sortField'] = 'order';
 		}
 
-		$data = $this->queryGet('ro', 'r/list_nodegroups.php', $opts);
+		$data = $this->queryGet('ro',
+			'r/list_nodegroups_from_nodes.php', $opts);
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
 				$nodegroups = array();
