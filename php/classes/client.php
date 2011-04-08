@@ -125,6 +125,29 @@ class NodegroupsClient {
 	}
 
 	/**
+	 * Get nodegroup details
+	 * @param string $nodegroup
+	 * @return mixed
+	 */
+	public function getNodegroup($nodegroup) {
+		$data = $this->queryGet('ro',
+			'r/get_nodegroup.php', array(
+			'nodegroup' => $nodegroup));
+
+		if(is_array($data)) {
+			if(array_key_exists('details', $data)) {
+				return $data['details'];
+			} else {
+				$this->error =
+					'Details field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get nodegroups from node
 	 * @param string $node
 	 * @param string $app
