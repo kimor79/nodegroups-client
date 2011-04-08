@@ -42,7 +42,10 @@ class NodegroupsClient {
 	protected $error = '';
 	protected $headers = array();
 	protected $iheaders = array();
+	protected $output = array();
 	protected $raw_headers = array();
+	protected $raw_output = '';
+	protected $status = '';
 
 	public function __construct($options = array()) {
 		if(array_key_exists('config_file', $options)) {
@@ -74,14 +77,6 @@ class NodegroupsClient {
 	}
 
 	/**
-	 * Get the most recent error
-	 * @return string
-	 */
-	public function error() {
-		return $this->error;
-	}
-
-	/**
 	 * Get a config param
 	 * @param string $param
 	 * @param string $sub
@@ -100,6 +95,14 @@ class NodegroupsClient {
 		}
 
 		return NULL;
+	}
+
+	/**
+	 * Get error from the most recent API call
+	 * @return string
+	 */
+	public function getError() {
+		return $this->error;
 	}
 
 	/**
@@ -246,11 +249,35 @@ class NodegroupsClient {
 	}
 
 	/**
+	 * Get the decoded json output from the most recent call
+	 * @return array
+	 */
+	public function getOutput() {
+		return $this->output;
+	}
+
+	/**
 	 * Get the raw headers from the most recent call
 	 * @return array
 	 */
 	public function getRawHeaders() {
 		return $this->raw_headers;
+	}
+
+	/**
+	 * Get the raw output from the most recent call
+	 * @return string
+	 */
+	public function getRawOutput() {
+		return $this->raw_output;
+	}
+
+	/**
+	 * Get status from the most recent call
+	 * @return string
+	 */
+	public function getStatus() {
+		return $this->status;
 	}
 
 	/**
@@ -279,6 +306,14 @@ class NodegroupsClient {
 	 * @return mixed
 	 */
 	public function queryGet($type = 'ro', $path = '', $params = array()) {
+		$this->error = '';
+		$this->headers = array();
+		$this->iheaders = array();
+		$this->output = array();
+		$this->raw_headers = array();
+		$this->raw_output = '';
+		$this->status = '';
+
 		$url = sprintf("%s/%s?outputFormat=json",
 			rtrim($this->getConfig('uri', $type)),
 			ltrim($path, '/'));
@@ -308,10 +343,6 @@ class NodegroupsClient {
 			CURLOPT_URL => $url
 		);
 
-		$this->headers = array();
-		$this->iheaders = array();
-		$this->raw_headers = array();
-
 		$ch = curl_init();
 		curl_setopt_array($ch, $this->curl_opts);
 		curl_setopt_array($ch, $opts);
@@ -331,15 +362,29 @@ class NodegroupsClient {
 			return false;
 		}
 
+		$this->raw_output = $j_data;
 		$data = json_decode($j_data, true);
+		curl_close($ch);
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
-			curl_close($ch);
 			return false;
 		}
 
-		curl_close($ch);
+		$this->output = $data;
+
+		if(!array_key_exists('status', $data)) {
+			$this->error = 'No status field';
+			return false;
+		}
+
+		$this->error = $data['message'];
+		$this->status = $data['status'];
+
+		if($data['status'] != '200') {
+			return false;
+		}
+
 		return $data;
 	}
 
@@ -353,6 +398,14 @@ class NodegroupsClient {
 	 */
 	public function queryPost($type = 'ro', $path = '',
 			$post = array(), $get = array()) {
+		$this->error = '';
+		$this->headers = array();
+		$this->iheaders = array();
+		$this->output = array();
+		$this->raw_headers = array();
+		$this->raw_output = '';
+		$this->status = '';
+
 		$url = sprintf("%s/%s?outputFormat=json",
 			rtrim($this->getConfig('uri', $type)),
 			ltrim($path, '/'));
@@ -383,10 +436,6 @@ class NodegroupsClient {
 			CURLOPT_URL => $url,
 		);
 
-		$this->headers = array();
-		$this->iheaders = array();
-		$this->raw_headers = array();
-
 		$ch = curl_init();
 		curl_setopt_array($ch, $this->curl_opts);
 		curl_setopt_array($ch, $opts);
@@ -406,15 +455,29 @@ class NodegroupsClient {
 			return false;
 		}
 
+		$this->raw_output = $j_data;
 		$data = json_decode($j_data, true);
+		curl_close($ch);
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
-			curl_close($ch);
 			return false;
 		}
 
-		curl_close($ch);
+		$this->output = $data;
+
+		if(!array_key_exists('status', $data)) {
+			$this->error = 'No status field';
+			return false;
+		}
+
+		$this->error = $data['message'];
+		$this->status = $data['status'];
+
+		if($data['status'] != '200') {
+			return false;
+		}
+
 		return $data;
 	}
 
