@@ -153,22 +153,27 @@ class NodegroupsClient {
 	/**
 	 * Get nodegroups from node
 	 * @param string $node
-	 * @param string $app
+	 * @param array $options
 	 * @return array
 	 */
-	public function getNodegroupsFromNode($node, $app = '') {
-		$opts = array(
+	public function getNodegroupsFromNode($node, $options = array()) {
+		$get = array();
+		$post = array(
 			'node' => $node,
 		);
 
-		if($app) {
-			$opts['app'] = $app;
-			$opts['sortDir'] = 'asc';
-			$opts['sortField'] = 'order';
+		if(array_key_exists('app', $options)) {
+			$post['app'] = $options['app'];
+			$get['sortDir'] = 'asc';
+			$get['sortField'] = 'order';
 		}
 
-		$data = $this->queryGet('ro',
-			'r/list_nodegroups_from_nodes.php', $opts);
+		if(array_key_exists('nodegroup_re', $options)) {
+			$post['nodegroup_re'] = $options['nodegroup_re'];
+		}
+
+		$data = $this->queryPost('ro',
+			'r/list_nodegroups_from_nodes.php', $post, $get);
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
 				$nodegroups = array();
