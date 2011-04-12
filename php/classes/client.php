@@ -38,7 +38,9 @@ class NodegroupsClient {
 		),
 	);
 
-	protected $curl_opts = array();
+	protected $curl_opts = array(
+		CURLOPT_USERAGENT => 'NodegroupsClient/1.0',
+	);
 	protected $error = '';
 	protected $headers = array();
 	protected $iheaders = array();
