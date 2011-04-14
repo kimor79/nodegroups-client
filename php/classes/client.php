@@ -33,8 +33,8 @@ class NodegroupsClient {
 
 	protected $config = array(
 		'uri' => array(
-			'ro' => 'http://localhost/api/v1',
-			'rw' => 'http://localhost/api/v1',
+			'ro' => 'http://localhost/api',
+			'rw' => 'http://localhost/api',
 		),
 	);
 
@@ -136,7 +136,7 @@ class NodegroupsClient {
 	 */
 	public function getNodegroup($nodegroup) {
 		$data = $this->queryGet('ro',
-			'r/get_nodegroup.php', array(
+			'v1/r/get_nodegroup.php', array(
 			'nodegroup' => $nodegroup));
 
 		if(is_array($data)) {
@@ -175,7 +175,7 @@ class NodegroupsClient {
 		}
 
 		$data = $this->queryPost('ro',
-			'r/list_nodegroups_from_nodes.php', $post, $get);
+			'v1/r/list_nodegroups_from_nodes.php', $post, $get);
 		if(is_array($data)) {
 			if(array_key_exists('records', $data)) {
 				$nodegroups = array();
@@ -203,7 +203,7 @@ class NodegroupsClient {
 	public function getNodesFromExpression($expression) {
 		// Add a space so as not to trigger the file upload
 		// when expression begins with '@'
-		$data = $this->queryPost('ro', 'r/list_nodes.php', array(
+		$data = $this->queryPost('ro', 'v1/r/list_nodes.php', array(
 			'expression' => ' ' . $expression,
 		));
 
@@ -232,7 +232,7 @@ class NodegroupsClient {
 	 * @return array
 	 */
 	public function getNodesFromNodegroup($nodegroup) {
-		$data = $this->queryGet('ro', 'r/list_nodes.php', array(
+		$data = $this->queryGet('ro', 'v1/r/list_nodes.php', array(
 			'nodegroup' => $nodegroup,
 		));
 
