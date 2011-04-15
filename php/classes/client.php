@@ -358,6 +358,7 @@ class NodegroupsClient {
 
 		if(curl_errno($ch)) {
 			$this->error = curl_error($ch);
+			$this->status = 500;
 			curl_close($ch);
 			return false;
 		}
@@ -365,6 +366,7 @@ class NodegroupsClient {
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		if($http_code != '200') {
 			$this->error = 'API returned HTTP code: ' . $http_code;
+			$this->status = 500;
 			curl_close($ch);
 			return false;
 		}
@@ -375,6 +377,7 @@ class NodegroupsClient {
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
+			$this->status = 500;
 			return false;
 		}
 
@@ -382,6 +385,7 @@ class NodegroupsClient {
 
 		if(!array_key_exists('status', $data)) {
 			$this->error = 'No status field';
+			$this->status = 500;
 			return false;
 		}
 
@@ -451,6 +455,7 @@ class NodegroupsClient {
 
 		if(curl_errno($ch)) {
 			$this->error = curl_error($ch);
+			$this->status = 500;
 			curl_close($ch);
 			return false;
 		}
@@ -458,6 +463,7 @@ class NodegroupsClient {
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		if($http_code != '200') {
 			$this->error = 'API returned HTTP code: ' . $http_code;
+			$this->status = 500;
 			curl_close($ch);
 			return false;
 		}
@@ -468,6 +474,7 @@ class NodegroupsClient {
 
 		if(!is_array($data)) {
 			$this->error = 'API returned invalid JSON';
+			$this->status = 500;
 			return false;
 		}
 
@@ -475,6 +482,7 @@ class NodegroupsClient {
 
 		if(!array_key_exists('status', $data)) {
 			$this->error = 'No status field';
+			$this->status = 500;
 			return false;
 		}
 
