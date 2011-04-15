@@ -79,240 +79,13 @@ class NodegroupsClient {
 	}
 
 	/**
-	 * Get a config param
-	 * @param string $param
-	 * @param string $sub
-	 * @return mixed
-	 */
-	public function getConfig($param = '', $sub = '') {
-		if(array_key_exists($param, $this->config)) {
-			if(empty($sub)) {
-				return $this->config[$param];
-			} else {
-				if(array_key_exists($sub,
-						$this->config[$param])) {
-					return $this->config[$param][$sub];
-				}
-			}
-		}
-
-		return NULL;
-	}
-
-	/**
-	 * Get error from the most recent API call
-	 * @return string
-	 */
-	public function getError() {
-		return $this->error;
-	}
-
-	/**
-	 * Get response header(s) from the most recent call
-	 * @param string header (optional)
-	 * @return mixed
-	 */
-	public function getHeader($header = '') {
-		if(empty($header)) {
-			return $this->headers;
-		}
-
-		if(array_key_exists($header, $this->headers)) {
-			return $this->headers[$header];
-		}
-
-		$iheader = strtolower($header);
-		if(array_key_exists($iheader, $this->iheaders)) {
-			return $this->iheaders[$iheader];
-		}
-
-		return NULL;
-	}
-
-	/**
-	 * Get nodegroup details
-	 * @param string $nodegroup
-	 * @return mixed
-	 */
-	public function getNodegroup($nodegroup) {
-		$data = $this->queryGet('ro',
-			'v1/r/get_nodegroup.php', array(
-			'nodegroup' => $nodegroup));
-
-		if(is_array($data)) {
-			if(array_key_exists('details', $data)) {
-				return $data['details'];
-			} else {
-				$this->error =
-					'Details field not in API output';
-				return false;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get nodegroups from node
-	 * @param string $node
-	 * @param array $options
-	 * @return array
-	 */
-	public function getNodegroupsFromNode($node, $options = array()) {
-		$get = array();
-		$post = array(
-			'node' => $node,
-		);
-
-		if(array_key_exists('app', $options)) {
-			$post['app'] = $options['app'];
-			$get['sortDir'] = 'asc';
-			$get['sortField'] = 'order';
-		}
-
-		if(array_key_exists('nodegroup_re', $options)) {
-			$post['nodegroup_re'] = $options['nodegroup_re'];
-		}
-
-		$data = $this->queryPost('ro',
-			'v1/r/list_nodegroups_from_nodes.php', $post, $get);
-		if(is_array($data)) {
-			if(array_key_exists('records', $data)) {
-				$nodegroups = array();
-				while(list($junk, $nodegroup) =
-						each($data['records'])) {
-					$nodegroups[] = $nodegroup['nodegroup'];
-				}
-
-				return $nodegroups;
-			} else {
-				$this->error =
-					'Records field not in API output';
-				return false;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get nodes from an expression
-	 * @param string $expression
-	 * @return array
-	 */
-	public function getNodesFromExpression($expression) {
-		// Add a space so as not to trigger the file upload
-		// when expression begins with '@'
-		$data = $this->queryPost('ro', 'v1/r/list_nodes.php', array(
-			'expression' => ' ' . $expression,
-		));
-
-		if(is_array($data)) {
-			if(array_key_exists('records', $data)) {
-				$nodes = array();
-				while(list($junk, $node) =
-						each($data['records'])) {
-					$nodes[] = $node['node'];
-				}
-
-				return $nodes;
-			} else {
-				$this->error =
-					'Records field not in API output';
-				return false;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get nodes from a nodegroup
-	 * @param string $nodegroup
-	 * @return array
-	 */
-	public function getNodesFromNodegroup($nodegroup) {
-		$data = $this->queryGet('ro', 'v1/r/list_nodes.php', array(
-			'nodegroup' => $nodegroup,
-		));
-
-		if(is_array($data)) {
-			if(array_key_exists('records', $data)) {
-				$nodes = array();
-				while(list($junk, $node) =
-						each($data['records'])) {
-					$nodes[] = $node['node'];
-				}
-
-				return $nodes;
-			} else {
-				$this->error =
-					'Records field not in API output';
-				return false;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get the decoded json output from the most recent call
-	 * @return array
-	 */
-	public function getOutput() {
-		return $this->output;
-	}
-
-	/**
-	 * Get the raw headers from the most recent call
-	 * @return array
-	 */
-	public function getRawHeaders() {
-		return $this->raw_headers;
-	}
-
-	/**
-	 * Get the raw output from the most recent call
-	 * @return string
-	 */
-	public function getRawOutput() {
-		return $this->raw_output;
-	}
-
-	/**
-	 * Get status from the most recent call
-	 * @return string
-	 */
-	public function getStatus() {
-		return $this->status;
-	}
-
-	/**
-	 * Parse a config file
-	 * @param string $file
-	 */
-	protected function parseConfigFile($file) {
-		if(!is_file($file)) {
-			throw new Exception('No such file: ' . $file);
-		}
-
-		$data = @parse_ini_file($file, true);
-
-		if(empty($data)) {
-			throw new Exception('Unable to parse config file');
-		}
-
-		$this->config = $this->setDetails($this->config, $data);
-	}
-
-	/**
 	 * Make a GET query
 	 * @param string $type ro/rw
 	 * @param string $path
 	 * @param array $params uri parameters
 	 * @return mixed
 	 */
-	public function queryGet($type = 'ro', $path = '', $params = array()) {
+	public function apiGet($type = 'ro', $path = '', $params = array()) {
 		$this->error = '';
 		$this->headers = array();
 		$this->iheaders = array();
@@ -407,8 +180,8 @@ class NodegroupsClient {
 	 * @param array $get GET parameters
 	 * @return mixed
 	 */
-	public function queryPost($type = 'ro', $path = '',
-			$post = array(), $get = array()) {
+	public function apiPost($type = 'ro', $path = '', $post = array(),
+			$get = array()) {
 		$this->error = '';
 		$this->headers = array();
 		$this->iheaders = array();
@@ -494,6 +267,250 @@ class NodegroupsClient {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Get a config param
+	 * @param string $param
+	 * @param string $sub
+	 * @return mixed
+	 */
+	public function getConfig($param = '', $sub = '') {
+		if(array_key_exists($param, $this->config)) {
+			if(empty($sub)) {
+				return $this->config[$param];
+			} else {
+				if(array_key_exists($sub,
+						$this->config[$param])) {
+					return $this->config[$param][$sub];
+				}
+			}
+		}
+
+		return NULL;
+	}
+
+	/**
+	 * Get error from the most recent API call
+	 * @return string
+	 */
+	public function getError() {
+		return $this->error;
+	}
+
+	/**
+	 * Get response header(s) from the most recent call
+	 * @param string header (optional)
+	 * @return mixed
+	 */
+	public function getHeader($header = '') {
+		if(empty($header)) {
+			return $this->headers;
+		}
+
+		if(array_key_exists($header, $this->headers)) {
+			return $this->headers[$header];
+		}
+
+		$iheader = strtolower($header);
+		if(array_key_exists($iheader, $this->iheaders)) {
+			return $this->iheaders[$iheader];
+		}
+
+		return NULL;
+	}
+
+	/**
+	 * Get nodegroup details
+	 * @param string $nodegroup
+	 * @return mixed
+	 */
+	public function getNodegroup($nodegroup) {
+		$data = $this->apiGet('ro',
+			'v1/r/get_nodegroup.php', array(
+			'nodegroup' => $nodegroup));
+
+		if(is_array($data)) {
+			if(array_key_exists('details', $data)) {
+				return $data['details'];
+			} else {
+				$this->error =
+					'Details field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get nodegroups from node
+	 * @param string $node
+	 * @param array $options
+	 * @return array
+	 */
+	public function getNodegroupsFromNode($node, $options = array()) {
+		$get = array();
+		$post = array(
+			'node' => $node,
+		);
+
+		if(array_key_exists('app', $options)) {
+			$post['app'] = $options['app'];
+			$get['sortDir'] = 'asc';
+			$get['sortField'] = 'order';
+		}
+
+		if(array_key_exists('nodegroup_re', $options)) {
+			$post['nodegroup_re'] = $options['nodegroup_re'];
+		}
+
+		$data = $this->apiPost('ro',
+			'v1/r/list_nodegroups_from_nodes.php', $post, $get);
+		if(is_array($data)) {
+			if(array_key_exists('records', $data)) {
+				$nodegroups = array();
+				while(list($junk, $nodegroup) =
+						each($data['records'])) {
+					$nodegroups[] = $nodegroup['nodegroup'];
+				}
+
+				return $nodegroups;
+			} else {
+				$this->error =
+					'Records field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get nodes from an expression
+	 * @param string $expression
+	 * @return array
+	 */
+	public function getNodesFromExpression($expression) {
+		// Add a space so as not to trigger the file upload
+		// when expression begins with '@'
+		$data = $this->apiPost('ro', 'v1/r/list_nodes.php', array(
+			'expression' => ' ' . $expression,
+		));
+
+		if(is_array($data)) {
+			if(array_key_exists('records', $data)) {
+				$nodes = array();
+				while(list($junk, $node) =
+						each($data['records'])) {
+					$nodes[] = $node['node'];
+				}
+
+				return $nodes;
+			} else {
+				$this->error =
+					'Records field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get nodes from a nodegroup
+	 * @param string $nodegroup
+	 * @return array
+	 */
+	public function getNodesFromNodegroup($nodegroup) {
+		$data = $this->apiGet('ro', 'v1/r/list_nodes.php', array(
+			'nodegroup' => $nodegroup,
+		));
+
+		if(is_array($data)) {
+			if(array_key_exists('records', $data)) {
+				$nodes = array();
+				while(list($junk, $node) =
+						each($data['records'])) {
+					$nodes[] = $node['node'];
+				}
+
+				return $nodes;
+			} else {
+				$this->error =
+					'Records field not in API output';
+				return false;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the decoded json output from the most recent call
+	 * @return array
+	 */
+	public function getOutput() {
+		return $this->output;
+	}
+
+	/**
+	 * Get the raw headers from the most recent call
+	 * @return array
+	 */
+	public function getRawHeaders() {
+		return $this->raw_headers;
+	}
+
+	/**
+	 * Get the raw output from the most recent call
+	 * @return string
+	 */
+	public function getRawOutput() {
+		return $this->raw_output;
+	}
+
+	/**
+	 * Get status from the most recent call
+	 * @return string
+	 */
+	public function getStatus() {
+		return $this->status;
+	}
+
+	/**
+	 * Parse a config file
+	 * @param string $file
+	 */
+	protected function parseConfigFile($file) {
+		if(!is_file($file)) {
+			throw new Exception('No such file: ' . $file);
+		}
+
+		$data = @parse_ini_file($file, true);
+
+		if(empty($data)) {
+			throw new Exception('Unable to parse config file');
+		}
+
+		$this->config = $this->setDetails($this->config, $data);
+	}
+
+	/**
+	 * Alias of apiGet()
+	 * @see apiGet()
+	 */
+	public function queryGet($type = 'ro', $path = '', $params = array()) {
+		return $this->apiGet($type, $path, $params);
+	}
+
+	/**
+	 * Alias of apiPost()
+	 * @see apiPost()
+	 */
+	public function queryPost($type = 'ro', $path = '', $post = array(),
+			$get = array()) {
+		return $this->apiPost($type, $path, $post, $get);
 	}
 
 	/**
