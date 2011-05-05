@@ -211,8 +211,7 @@ class NodegroupsClient {
 			if(is_array($value)) {
 				foreach($value as $t_value) {
 					$url_params[] = sprintf("%s[]=%s",
-						$key,
-						rawurlencode($t_value));
+						$key, rawurlencode($t_value));
 					}
 			} else {
 				$url_params[] = sprintf("%s=%s", $key,
@@ -228,7 +227,7 @@ class NodegroupsClient {
 			if(is_array($value)) {
 				foreach($value as $t_value) {
 					$url_post[] = sprintf("%s[]=%s",
-						$key, $t_value);
+						$key, rawurlencode($t_value));
 				}
 			} else {
 				$url_post[] = sprintf("%s=%s", $key, $value);
