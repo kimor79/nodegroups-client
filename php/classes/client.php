@@ -230,7 +230,8 @@ class NodegroupsClient {
 						$key, rawurlencode($t_value));
 				}
 			} else {
-				$url_post[] = sprintf("%s=%s", $key, $value);
+				$url_post[] = sprintf("%s=%s", $key,
+					rawurlencode($value));
 			}
 		}
 
