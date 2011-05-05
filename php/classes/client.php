@@ -205,6 +205,7 @@ class NodegroupsClient {
 			ltrim($path, '/'));
 
 		$url_params = array();
+		$url_post = array();
 
 		foreach($get as $key => $value) {
 			if(is_array($value)) {
@@ -223,10 +224,21 @@ class NodegroupsClient {
 			$url .= '&' . implode('&', $url_params);
 		}
 
+		foreach($post as $key => $value) {
+			if(is_array($value)) {
+				foreach($value as $t_value) {
+					$url_post[] = sprintf("%s[]=%s",
+						$key, $t_value);
+				}
+			} else {
+				$url_post[] = sprintf("%s=%s", $key, $value);
+			}
+		}
+
 		$opts = array(
 			CURLOPT_HEADERFUNCTION => array(&$this, 'readHeader'),
 			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_POSTFIELDS => $post,
+			CURLOPT_POSTFIELDS => implode('&', $url_post),
 			CURLOPT_URL => $url,
 		);
 
