@@ -54,6 +54,7 @@ class NodegroupsClient {
 	protected $error = '';
 	protected $headers = array();
 	protected $iheaders = array();
+	protected $info = array();
 	protected $output = array();
 	protected $raw_headers = array();
 	protected $raw_output = '';
@@ -99,6 +100,7 @@ class NodegroupsClient {
 		$this->error = '';
 		$this->headers = array();
 		$this->iheaders = array();
+		$this->info = array();
 		$this->output = array();
 		$this->raw_headers = array();
 		$this->raw_output = '';
@@ -146,9 +148,11 @@ class NodegroupsClient {
 			return false;
 		}
 
-		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		if($http_code != '200') {
-			$this->error = 'API returned HTTP code: ' . $http_code;
+		$this->info = curl_getinfo($ch);
+
+		if($this->info['http_code'] != 200) {
+			$this->error = 'API returned HTTP code: ' .
+				$this->info['http_code'];
 			$this->status = 500;
 			curl_close($ch);
 			return false;
@@ -255,9 +259,11 @@ class NodegroupsClient {
 			return false;
 		}
 
-		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		if($http_code != '200') {
-			$this->error = 'API returned HTTP code: ' . $http_code;
+		$this->info = curl_getinfo($ch);
+
+		if($this->info['http_code'] != 200) {
+			$this->error = 'API returned HTTP code: ' .
+				$this->info['http_code'];
 			$this->status = 500;
 			curl_close($ch);
 			return false;
@@ -340,6 +346,14 @@ class NodegroupsClient {
 		}
 
 		return NULL;
+	}
+
+	/**
+	 * Get the curl info from the most recent call
+	 * @return array
+	 */
+	public function getInfo() {
+		return $this->info;
 	}
 
 	/**
